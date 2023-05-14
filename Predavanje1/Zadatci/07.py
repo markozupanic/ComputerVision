@@ -14,9 +14,8 @@ rec=cv2.boundingRect(red_mask)
 
 cv2.rectangle(red_mask,rec,color=100,thickness=2)
 red_mmask_rec=cv2.bitwise_and(image_bgr,image_bgr,mask=red_mask)
-red_mmask_rec_bgr=cv2.cvtColor(red_mmask_rec,cv2.COLOR_HSV2BGR)
 
-cv2.imshow("Original with rectangle",red_mmask_rec_bgr)
+cv2.imshow("Original with rectangle",red_mmask_rec)
 cv2.imshow("Original picture",image_bgr)
 cv2.imshow("Red mask",red_mask)
 cv2.waitKey()
