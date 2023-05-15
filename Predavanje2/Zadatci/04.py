@@ -1,3 +1,7 @@
+#Metodom oduzimanja pozadine pokušajte izdvojiti crveni autić iz videa “red_car_moving.avi”.
+#● Pojavljuju li se određene smetnje?
+#● Primijenite odgovarajuća morfološka filtriranja kako bi uklonili šum
+
 import cv2 as cv
 import numpy as np
 

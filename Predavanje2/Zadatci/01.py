@@ -15,7 +15,7 @@ img=np.zeros((height,width),dtype=np.uint8)
 
 cv2.ellipse(img,
             (width//2,height),
-            axes=(450,300),
+            axes=(400,260),
             angle=0,
             startAngle=130,
             endAngle=410,
@@ -24,7 +24,7 @@ cv2.ellipse(img,
 
 
 mask_image=cv2.bitwise_and(image_canny,img)
-lines=cv2.HoughLinesP(mask_image, 2, np.pi/180,100,minLineLength=100,maxLineGap=10)
+lines=cv2.HoughLinesP(mask_image, 2, np.pi/180,100,minLineLength=70,maxLineGap=10)
 lines=lines.squeeze()
 for line in lines:
     cv2.line(image,(line[0],line[1]),(line[2],line[3]),(0,255,0),thickness=3)
