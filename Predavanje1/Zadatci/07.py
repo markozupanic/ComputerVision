@@ -12,8 +12,9 @@ upper_red_boundry=np.array([1,200,255])
 red_mask=cv2.inRange(image_hsv,lower_red_boundry,upper_red_boundry)
 rec=cv2.boundingRect(red_mask)
 
-cv2.rectangle(red_mask,rec,color=100,thickness=2)
+cv2.rectangle(image_bgr,rec,color=(0,255,0),thickness=2)
 red_mmask_rec=cv2.bitwise_and(image_bgr,image_bgr,mask=red_mask)
+
 
 cv2.imshow("Original with rectangle",red_mmask_rec)
 cv2.imshow("Original picture",image_bgr)
