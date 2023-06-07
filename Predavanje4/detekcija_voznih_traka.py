@@ -54,6 +54,10 @@ def findLines(canny, frameROI):
             x1, y1, x2, y2 = line[0]
             #TODO: pretvorite točke (x1, y1) i (x2, y2) u funkciju pravca y=ax+b
             #pomoc: https://keisan.casio.com/exec/system/1223508685
+            if y1 == y2:
+                y1+=1
+            if x1 == x2:
+                x1+=1
 
             a = (y2-y1)/(x2-x1)
             b = y1 - a*x1
@@ -62,25 +66,25 @@ def findLines(canny, frameROI):
 
             #TODO: definirajte granice za prikaz linija vozne trake
             if x_val > 150 and x_val < 1200:
-                if line_angle > 5 and line_angle<90:
+                if line_angle > 10 and line_angle<90:
                     #desna linija
                     if x_val > (canny.shape[1]/2)-200 and x_val <(canny.shape[1]/2)+200:
                         cv2.line(frameROI, (x1, y1), (x2, y2), (255,0,255), 2)
-                        linesRight.append([a, b, 1, x_val])
+                        linesRight.append([a, b, 1, x_val, line_angle])
 
                     else:
                         cv2.line(frameROI, (x1, y1), (x2, y2), (255,0,0), 2)
-                        linesRight.append([a, b, 0, x_val])
+                        linesRight.append([a, b, 0, x_val, line_angle])
 
                 if line_angle < -10 and line_angle > -90:
                     #lijeva linija
                     if x_val > (canny.shape[1]/2)-200 and x_val <(canny.shape[1]/2)+200:
                         cv2.line(frameROI, (x1, y1), (x2, y2), (255,0,255), 2)
-                        linesLeft.append([a, b, 1, x_val])
+                        linesLeft.append([a, b, 1, x_val, line_angle])
 
                     else:
                         cv2.line(frameROI, (x1, y1), (x2, y2), (255,0,0), 2)
-                        linesLeft.append([a, b, 0, x_val])
+                        linesLeft.append([a, b, 0, x_val, line_angle])
 
     except:
         linesRight = []
@@ -89,11 +93,63 @@ def findLines(canny, frameROI):
     return linesRight, linesLeft
 
 # TODO: Napisite funkciju koja oznacava sa zelenom povrsinom voznu traku (podrucje unutar pravaca) te ispisuje upozorenje na originalni ulazni frame
-def drawLane(linesLeft, linesRight, frameToDraw):
-    pass
-    
-    
+def drawLane_math(linesLeft, linesRight, frameToDraw):
+    if (len(linesLeft) < 1 or len(linesRight) < 1) or ((linesLeft[0][2] == 1) or (linesRight[0][2] == 1)): 
+        putInfoImg(frameToDraw, "PRIJELAZ LINIJE!", (300, 300))
+    else:
+        # [a, b, 1, x_val, line_angle]
+        # yMin = (height//2)+80
+        # yMax = height-100
 
+        angle_left = math.radians(180 - linesLeft[0][4])
+        angle_right = math.radians(180 - linesRight[0][4])
+        y_top = frameToDraw.shape[0] // 2 + 80
+        y_bottom = frameToDraw.shape[0] - 100
+
+        hypot_left = abs(y_top - y_bottom) / math.sin(angle_left)
+        hypot_right = abs(y_top - y_bottom) / math.sin(angle_right)
+
+        x1 = linesLeft[0][3] + hypot_left * math.cos(angle_left)
+        x2 = linesRight[0][3] + hypot_right * math.cos(angle_right)
+        
+        pt1 = (x1, y_top)
+        pt2 = (x2, y_top)
+        pt3 = (linesRight[0][3], y_bottom)
+        pt4 = (linesLeft[0][3], y_bottom) 
+        points = np.int32([pt1, pt2, pt3, pt4])
+
+        cv2.fillPoly(frameToDraw, [points], (0,255,0))
+
+
+def drawLane(linesLeft, linesRight, frameToDraw):
+
+    ymin = 0
+    ymax = frameToDraw.shape[0]
+
+    if linesLeft and linesRight:
+
+        x1_1 = int((ymin - linesLeft[0][1]) / linesLeft[0][0])
+        x1_2 = int((ymax - linesLeft[0][1]) / linesLeft[0][0])
+            
+        x2_1 = int((ymin - linesRight[0][1]) / linesRight[0][0])
+        x2_2 = int((ymax - linesRight[0][1]) / linesRight[0][0])
+
+        if linesLeft[0][2] == 0 and linesRight[0][2] == 0:
+            contours = np.array([[x1_1,ymin+yMin], [x2_1,ymin+yMin], [x2_2, ymax+yMax], [x1_2,ymax+yMax]])
+            overlay = frameToDraw.copy()
+
+            cv2.fillPoly(overlay, [contours], color=(0, 255, 100))
+            cv2.addWeighted(overlay, 0.35, frameToDraw, 1 - 0.35, 0, frameToDraw)
+
+    if linesLeft:
+        if linesLeft[0][2] == 1:
+            putInfoImg(frameToDraw, "Upozorenje!", (int(width/2)-140, 150), (0, 0, 255))
+    
+    if linesRight:
+        if linesRight[0][2] == 1:
+            putInfoImg(frameToDraw, "Upozorenje!", (int(width/2)-140, 150), (0, 0, 255))
+        
+    return frameToDraw
 
 def putInfoImg(img, text, loc, color=(0, 255, 255)):
     cv2.putText(img, 
@@ -148,7 +204,7 @@ while True:
     linesRight, linesLeft = findLines(canny, frameROI)
 
     # TODO: Pozovite funkciju za prikaz vozne trake na ulaznom video okviru
-    
+    drawLane(linesLeft, linesRight, frame)
 
     # TODO: Prikazi video okvir pomocu cv2.imshow(); i sve ostale medjurezultate kada ih napravite
     cv2.imshow("frame", frame)
@@ -156,10 +212,6 @@ while True:
     cv2.imshow("mask", mask)
     cv2.imshow("filtered roi", filteredROI)
     cv2.imshow("canny", canny)
-    
-    
-    
-    
 
     key =  cv2.waitKey(1) & 0xFF 
     if key == ord('q'):
@@ -171,5 +223,4 @@ while True:
 
 
 # TODO: Ovdje unistite sve prozore i oslobodite objekt koji je kreiran pomocu cv2.VideoCapture
-
 cv2.destroyAllWindows()
